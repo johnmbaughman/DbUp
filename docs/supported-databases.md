@@ -1,6 +1,6 @@
 DbUp supports a number of different databases, the platforms are also listed under each database.
 
-* Sql Server 2000, 2005, 2008, 2012, 2014, 2016
+* Sql Server 2000 and later (any that is supported by Microsoft.Data.SqlClient)
 * Sql Azure
     - &gt;= .NET 3.5
 * SQLite
@@ -14,7 +14,10 @@ DbUp supports a number of different databases, the platforms are also listed und
     - &gt;= .NET 3.5
 * PostgreSQL
     - &gt;= .NET 4.0
+* Amazon Redshift
+    - &gt;= .NET 4.0
 * Firebird
     - &gt;= .NET 4.0
+* Oracle
 
 If you would like to see a new database or a new target platform, please [submit a pull request](./contributing.md)

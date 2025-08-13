@@ -1,8 +1,5 @@
 ﻿using System;
 
-namespace DbUp.Tests
-{
-    internal class TestSqlException : Exception
-    {
-    }
-}
+namespace DbUp.Tests;
+
+class TestSqlException : Exception;

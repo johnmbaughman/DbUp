@@ -1,11 +1,6 @@
-﻿using System;
+﻿namespace DbUp;
 
-namespace DbUp
-{
-    /// <summary>
-    /// Add extension methods to this type if you plan to add support for DropDatabase for additional databases.
-    /// </summary>
-    public class SupportedDatabasesForDropDatabase
-    {
-    }
-}
+/// <summary>
+/// Add extension methods to this type if you plan to add support for <see cref="DropDatabase"/> for additional databases.
+/// </summary>
+public class SupportedDatabasesForDropDatabase;

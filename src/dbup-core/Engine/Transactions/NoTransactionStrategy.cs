@@ -1,29 +1,53 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using DbUp.Engine.Output;
 
-namespace DbUp.Engine.Transactions
+namespace DbUp.Engine.Transactions;
+
+class NoTransactionStrategy : ITransactionStrategy
 {
-    internal class NoTransactionStrategy : ITransactionStrategy
+    IDbConnection connection;
+    int? commandTimeout;
+
+    public void Execute(Action<Func<IDbCommand>> action)
     {
-        private IDbConnection connection;
-
-        public void Execute(Action<Func<IDbCommand>> action)
+        action(() =>
         {
-            action(()=>connection.CreateCommand());
-        }
+            var command = connection.CreateCommand();
+            if (commandTimeout.HasValue)
+            {
+                command.CommandTimeout = commandTimeout.Value;
+            }
 
-        public T Execute<T>(Func<Func<IDbCommand>, T> actionWithResult)
-        {
-            return actionWithResult(() => connection.CreateCommand());
-        }
-
-        public void Initialise(IDbConnection dbConnection, IUpgradeLog upgradeLog, List<SqlScript> executedScripts)
-        {
-            connection = dbConnection;
-        }
-
-        public void Dispose() { }
+            return command;
+        });
     }
+
+    public T Execute<T>(Func<Func<IDbCommand>, T> actionWithResult)
+    {
+        return actionWithResult(() =>
+        {
+            var command = connection.CreateCommand();
+            if (commandTimeout.HasValue)
+            {
+                command.CommandTimeout = commandTimeout.Value;
+            }
+
+            return command;
+        });
+    }
+
+    public void Initialise(
+        IDbConnection dbConnection,
+        IUpgradeLog upgradeLog,
+        List<SqlScript> executedScripts,
+        int? executionTimeoutSeconds
+    )
+    {
+        connection = dbConnection ?? throw new ArgumentNullException(nameof(dbConnection));
+        commandTimeout = executionTimeoutSeconds;
+    }
+
+    public void Dispose() { }
 }

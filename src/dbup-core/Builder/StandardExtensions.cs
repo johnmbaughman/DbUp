@@ -5,11 +5,11 @@ using System.Text;
 using DbUp;
 using DbUp.Builder;
 using DbUp.Engine;
-using DbUp.Engine.Filters;
 using DbUp.Engine.Output;
 using DbUp.Engine.Transactions;
 using DbUp.ScriptProviders;
 using DbUp.Support;
+using Microsoft.Extensions.Logging;
 
 /// <summary>
 /// Configuration extensions for the standard stuff.
@@ -36,6 +36,34 @@ public static class StandardExtensions
     }
 
     /// <summary>
+    /// Logs to a Microsoft <see cref="ILoggerFactory"/>.
+    /// </summary>
+    /// <param name="builder"></param>
+    /// <param name="loggerFactory">The logger.</param>
+    /// <returns>
+    /// The same builder
+    /// </returns>
+    public static UpgradeEngineBuilder LogTo(this UpgradeEngineBuilder builder, ILoggerFactory loggerFactory)
+    {
+        builder.LogTo(new MicrosoftUpgradeLog(loggerFactory));
+        return builder;
+    }
+
+    /// <summary>
+    /// Logs to a Microsoft <see cref="ILogger"/>.
+    /// </summary>
+    /// <param name="builder"></param>
+    /// <param name="logger">The logger.</param>
+    /// <returns>
+    /// The same builder
+    /// </returns>
+    public static UpgradeEngineBuilder LogTo(this UpgradeEngineBuilder builder, ILogger logger)
+    {
+        builder.LogTo(new MicrosoftUpgradeLog(logger));
+        return builder;
+    }
+
+    /// <summary>
     /// Logs to the console using pretty colors.
     /// </summary>
     /// <param name="builder">The builder.</param>
@@ -44,9 +72,10 @@ public static class StandardExtensions
     /// </returns>
     public static UpgradeEngineBuilder LogToConsole(this UpgradeEngineBuilder builder)
     {
-        return LogTo(builder, new ConsoleUpgradeLog());
+        builder.LogTo(new ConsoleUpgradeLog());
+        return builder;
     }
-
+    
     /// <summary>
     /// Discards all log messages
     /// </summary>
@@ -58,23 +87,22 @@ public static class StandardExtensions
     {
         return LogTo(builder, new NoOpUpgradeLog());
     }
-
-#if SUPPORTS_LIBLOG
+    
     /// <summary>
-    /// Logs to a automatically detected globally configured logger supported by LibLog.
+    /// Logs to System.Diagnostics.Trace.
     /// </summary>
     /// <param name="builder">The builder.</param>
     /// <returns>
     /// The same builder
     /// </returns>
-    public static UpgradeEngineBuilder LogToAutodetectedLog(this UpgradeEngineBuilder builder)
+    public static UpgradeEngineBuilder LogToTrace(this UpgradeEngineBuilder builder)
     {
-        return LogTo(builder, new AutodetectUpgradeLog());
+        builder.LogTo(new TraceUpgradeLog());
+        return builder;
     }
-#endif
 
     /// <summary>
-    /// Logs to the console using pretty colors.
+    /// Enabled script output logging.
     /// </summary>
     /// <param name="builder">The builder.</param>
     /// <returns>
@@ -87,19 +115,7 @@ public static class StandardExtensions
     }
 
     /// <summary>
-    /// Logs to System.Diagnostics.Trace.
-    /// </summary>
-    /// <param name="builder">The builder.</param>
-    /// <returns>
-    /// The same builder
-    /// </returns>
-    public static UpgradeEngineBuilder LogToTrace(this UpgradeEngineBuilder builder)
-    {
-        return LogTo(builder, new TraceUpgradeLog());
-    }
-
-    /// <summary>
-    /// Resets any loggers configured with 
+    /// Resets any loggers configured with
     /// </summary>
     /// <param name="builder"></param>
     /// <returns></returns>
@@ -174,7 +190,7 @@ public static class StandardExtensions
     /// </returns>
     public static UpgradeEngineBuilder WithScripts(this UpgradeEngineBuilder builder, params SqlScript[] scripts)
     {
-        return WithScripts(builder, (IEnumerable<SqlScript>) scripts);
+        return WithScripts(builder, (IEnumerable<SqlScript>)scripts);
     }
 
     /// <summary>
@@ -211,7 +227,7 @@ public static class StandardExtensions
     /// <param name="builder">The builder.</param>
     /// <param name="name">The name of the script. This should never change once executed.</param>
     /// <param name="contents">The script body.</param>
-    /// <param name="sqlScriptOptions">The sql script options.</param>    
+    /// <param name="sqlScriptOptions">The sql script options.</param>
     /// <returns>
     /// The same builder
     /// </returns>
@@ -239,7 +255,7 @@ public static class StandardExtensions
     /// <param name="builder">The builder.</param>
     /// <param name="name">The name of the script</param>
     /// <param name="script">The script instance</param>
-    /// <param name="sqlScriptOptions">The sql script options.</param>    
+    /// <param name="sqlScriptOptions">The sql script options.</param>
     /// <returns>
     /// The same builder
     /// </returns>
@@ -268,7 +284,7 @@ public static class StandardExtensions
     /// </returns>
     public static UpgradeEngineBuilder WithScripts(this UpgradeEngineBuilder builder, Func<IScript, string> namer, params IScript[] scripts)
         => WithScripts(builder, new ScriptInstanceProvider(namer, scripts));
-    
+
     /// <summary>
     /// Adds IScript instances to the upgrader.
     /// </summary>
@@ -299,8 +315,8 @@ public static class StandardExtensions
     /// Adds all scripts from a folder on the file system, with custom encoding.
     /// </summary>
     /// <param name="builder">The builder.</param>
-    /// <param name="path">The directory path.</param>    
-    /// <param name="sqlScriptOptions">The sql script options</param>    
+    /// <param name="path">The directory path.</param>
+    /// <param name="sqlScriptOptions">The sql script options</param>
     /// <returns>
     /// The same builder
     /// </returns>
@@ -328,14 +344,14 @@ public static class StandardExtensions
     /// </summary>
     /// <param name="builder">The builder.</param>
     /// <param name="path">The directory path.</param>
-    /// <param name="filter">The filter. Use the static <see cref="Filters"/> class to get some pre-defined filters.</param>    
+    /// <param name="filter">The filter. Use the static <see cref="Filters"/> class to get some pre-defined filters.</param>
     /// <param name="sqlScriptOptions">The sql script options</param>
     /// <returns>
     /// The same builder
     /// </returns>
     public static UpgradeEngineBuilder WithScriptsFromFileSystem(this UpgradeEngineBuilder builder, string path, Func<string, bool> filter, SqlScriptOptions sqlScriptOptions)
     {
-        return WithScripts(builder, new FileSystemScriptProvider(path, new FileSystemScriptOptions() { Filter = filter }, sqlScriptOptions));
+        return WithScripts(builder, new FileSystemScriptProvider(path, new FileSystemScriptOptions() {Filter = filter}, sqlScriptOptions));
     }
 
     /// <summary>
@@ -364,7 +380,7 @@ public static class StandardExtensions
     /// </returns>
     public static UpgradeEngineBuilder WithScriptsFromFileSystem(this UpgradeEngineBuilder builder, string path, Encoding encoding, SqlScriptOptions sqlScriptOptions)
     {
-        return WithScripts(builder, new FileSystemScriptProvider(path, new FileSystemScriptOptions() { Encoding = encoding }, sqlScriptOptions));
+        return WithScripts(builder, new FileSystemScriptProvider(path, new FileSystemScriptOptions() {Encoding = encoding}, sqlScriptOptions));
     }
 
     /// <summary>
@@ -395,7 +411,7 @@ public static class StandardExtensions
     /// </returns>
     public static UpgradeEngineBuilder WithScriptsFromFileSystem(this UpgradeEngineBuilder builder, string path, Func<string, bool> filter, Encoding encoding, SqlScriptOptions sqlScriptOptions)
     {
-        return WithScripts(builder, new FileSystemScriptProvider(path, new FileSystemScriptOptions() { Filter = filter, Encoding = encoding }, sqlScriptOptions));
+        return WithScripts(builder, new FileSystemScriptProvider(path, new FileSystemScriptOptions() {Filter = filter, Encoding = encoding}, sqlScriptOptions));
     }
 
     /// <summary>
@@ -410,6 +426,21 @@ public static class StandardExtensions
     public static UpgradeEngineBuilder WithScriptsFromFileSystem(this UpgradeEngineBuilder builder, string path, FileSystemScriptOptions options)
     {
         return WithScripts(builder, new FileSystemScriptProvider(path, options));
+    }
+
+    /// <summary>
+    /// Adds all scripts from a folder on the file system, with custom options (Encoding, filter, etc.).
+    /// </summary>
+    /// <param name="builder">The builder.</param>
+    /// <param name="path">The directory path.</param>
+    /// <param name="options">Options for the file System Provider</param>
+    /// <param name="sqlScriptOptions">The sql script options</param>
+    /// <returns>
+    /// The same builder
+    /// </returns>
+    public static UpgradeEngineBuilder WithScriptsFromFileSystem(this UpgradeEngineBuilder builder, string path, FileSystemScriptOptions options, SqlScriptOptions sqlScriptOptions)
+    {
+        return WithScripts(builder, new FileSystemScriptProvider(path, options, sqlScriptOptions));
     }
 
     /// <summary>
@@ -538,7 +569,7 @@ public static class StandardExtensions
     /// </returns>
     public static UpgradeEngineBuilder WithScriptsAndCodeEmbeddedInAssembly(this UpgradeEngineBuilder builder, Assembly assembly)
     {
-        return WithScripts(builder, new EmbeddedScriptAndCodeProvider(assembly, s => s.EndsWith(".sql", StringComparison.OrdinalIgnoreCase), s => true));
+        return WithScripts(builder, new EmbeddedScriptAndCodeProvider(assembly, s => s.EndsWith(".sql", StringComparison.OrdinalIgnoreCase), _ => true));
     }
 
     /// <summary>
@@ -568,7 +599,7 @@ public static class StandardExtensions
     {
         return WithScripts(builder, new EmbeddedScriptAndCodeProvider(assembly, filter));
     }
-    
+
     /// <summary>
     /// Adds all scripts found as embedded resources in the given assembly, or classes which inherit from IScript, with a custom filter (you'll need to exclude non- .SQL files yourself).
     /// </summary>
@@ -591,7 +622,7 @@ public static class StandardExtensions
     /// <param name="assembly">The assembly.</param>
     /// <param name="filter">The script filter. Don't forget to ignore any non- .SQL files.</param>
     /// <param name="codeScriptFilter">The embedded script filter.</param>
-    /// <param name="sqlScriptOptions">The sql script options.</param>    
+    /// <param name="sqlScriptOptions">The sql script options.</param>
     /// <returns>
     /// The same builder
     /// </returns>
@@ -606,7 +637,7 @@ public static class StandardExtensions
     /// <param name="builder">The builder.</param>
     /// <param name="assembly">The assembly.</param>
     /// <param name="filter">The script filter. Don't forget to ignore any non- .SQL files.</param>
-    /// <param name="sqlScriptOptions">The sql script options.</param>    
+    /// <param name="sqlScriptOptions">The sql script options.</param>
     /// <returns>
     /// The same builder
     /// </returns>
@@ -722,14 +753,17 @@ public static class StandardExtensions
         if (timeout == null)
         {
             builder.Configure(c => c.ScriptExecutor.ExecutionTimeoutSeconds = null);
+            builder.Configure(c => c.ConnectionManager.ExecutionTimeoutSeconds = null);
             return builder;
         }
 
         var totalSeconds = timeout.Value.TotalSeconds;
 
-        if ((0 > totalSeconds) || (totalSeconds > int.MaxValue)) throw new ArgumentOutOfRangeException("timeout", timeout, string.Format("The timeout value must be a value between 0 and {0} seconds", int.MaxValue));
+        if ((0 > totalSeconds) || (totalSeconds > int.MaxValue)) throw new ArgumentOutOfRangeException("timeout", timeout,
+            $"The timeout value must be a value between 0 and {int.MaxValue} seconds");
 
         builder.Configure(c => c.ScriptExecutor.ExecutionTimeoutSeconds = Convert.ToInt32(totalSeconds));
+        builder.Configure(c => c.ConnectionManager.ExecutionTimeoutSeconds = Convert.ToInt32(totalSeconds));
         return builder;
     }
 
@@ -753,6 +787,18 @@ public static class StandardExtensions
     public static UpgradeEngineBuilder WithTransaction(this UpgradeEngineBuilder builder)
     {
         builder.Configure(c => c.ConnectionManager.TransactionMode = TransactionMode.SingleTransaction);
+
+        return builder;
+    }
+
+    /// <summary>
+    /// Run DbUp in a single transaction but rollback at the end
+    /// </summary>
+    /// <param name="builder"></param>
+    /// <returns></returns>
+    public static UpgradeEngineBuilder WithTransactionAlwaysRollback(this UpgradeEngineBuilder builder)
+    {
+        builder.Configure(c => c.ConnectionManager.TransactionMode = TransactionMode.SingleTransactionAlwaysRollback);
 
         return builder;
     }
@@ -801,8 +847,8 @@ public static class StandardExtensions
     /// </summary>
     /// <param name="builder">The builder.</param>
     /// <param name="assemblies">The assemblies.</param>
-    /// <param name="filter">The filter. Don't forget to ignore any non- .SQL files.</param>    
-    /// <param name="sqlScriptOptions">The sql script options.</param>    
+    /// <param name="filter">The filter. Don't forget to ignore any non- .SQL files.</param>
+    /// <param name="sqlScriptOptions">The sql script options.</param>
     /// <returns>
     /// The same builder
     /// </returns>
@@ -847,12 +893,12 @@ public static class StandardExtensions
     /// <param name="assemblies">The assemblies.</param>
     /// <param name="filter">The filter. Don't forget to ignore any non- .SQL files.</param>
     /// <param name="encoding">The encoding.</param>
-    /// <param name="sqlScriptOptions">The sql script options.</param>    
+    /// <param name="sqlScriptOptions">The sql script options.</param>
     /// <returns>
     /// The same builder
     /// </returns>
     public static UpgradeEngineBuilder WithScriptsEmbeddedInAssemblies(this UpgradeEngineBuilder builder, Assembly[] assemblies, Func<string, bool> filter, Encoding encoding, SqlScriptOptions sqlScriptOptions)
     {
         return WithScripts(builder, new EmbeddedScriptsProvider(assemblies, filter, encoding, sqlScriptOptions));
-    }    
+    }
 }
